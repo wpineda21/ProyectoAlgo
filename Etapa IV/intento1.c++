@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 
 /*Definimos la Estructura de los Nodos establecidos en el proyecto*/
 struct TreeNode
@@ -10,17 +11,25 @@ struct TreeNode
     double probability; /* Este valor de probabilidad variara conforme el dado segun la tabla de probabilidad de cada Elemento */
 };
 
+// Define la estructura del árbol de Huffman
+struct HuffmanNode
+{
+    char symbol;
+    double probability;
+    HuffmanNode *left;
+    HuffmanNode *right;
+    // Agrega otros campos según sea necesario
+};
+
 /*Declaramos las Funciones a Utilizar*/
 TreeNode *crearNodo(char symbol, double probability);
 void MinHeapInsert(TreeNode **heap, TreeNode *newNode, int &heapSize);
 void MinHeapify(TreeNode **heap, int heapSize, int currentIdx);
 TreeNode *MinHeapExtractMin(TreeNode **heap, int &heapSize);
 int BussinesLogic();
+HuffmanNode *buildHuffmanTree(TreeNode **minHeap, int &heapSize);
 
-int main()
-{
-    BussinesLogic();
-}
+void generateHuffmanCodes(HuffmanNode *root, std::string currentCode, std::map<char, std::string> &huffmanCodes)
 
 TreeNode *crearNodo(char symbol, double probability)
 {
@@ -100,8 +109,91 @@ TreeNode *MinHeapExtractMin(TreeNode **heap, int &heapSize)
     return minNode;
 }
 
+// Define una función para construir el árbol de Huffman a partir de los nodos
+HuffmanNode *buildHuffmanTree(TreeNode **minHeap, int &heapSize)
+{
+    while (heapSize > 1)
+    {
+        // Extrae los dos nodos de menor probabilidad del montículo
+        TreeNode *leftNode = MinHeapExtractMin(minHeap, heapSize);
+        TreeNode *rightNode = MinHeapExtractMin(minHeap, heapSize);
+
+        // Crea un nuevo nodo interno con probabilidad igual a la suma de las probabilidades
+        // de los dos nodos extraídos
+        TreeNode *internalNode = crearNodo('\0', leftNode->probability + rightNode->probability);
+        internalNode->left_son = leftNode;
+        internalNode->right_son = rightNode;
+
+        // Inserta el nuevo nodo en el montículo
+        MinHeapInsert(minHeap, internalNode, heapSize);
+    }
+
+    // El último nodo en el montículo es el nodo raíz del árbol de Huffman
+    return minHeap[0];
+}
+
+TreeNode* buildHuffmanTree(TreeNode* nodes, int numNodes) {
+    MinHeap minHeap(numNodes);
+
+    for (int i = 0; i < numNodes; i++) {
+        minHeap.push(&nodes[i]);
+    }
+
+    while (!minHeap.empty()) {
+        TreeNode* left = minHeap.pop();
+        TreeNode* right = minHeap.pop();
+
+        TreeNode* merged = new TreeNode('\0', left->probability + right->probability);
+        merged->left = left;
+        merged->right = right;
+
+        if (!minHeap.empty()) {
+            minHeap.push(merged);
+        } else {
+            return merged; // Este es el nodo raíz del árbol de Huffman
+        }
+    }
+
+    return nullptr;
+}
+
+// Define una función para generar los códigos Huffman a partir del árbol
+void generateHuffmanCodes(HuffmanNode *root, std::string currentCode, std::map<char, std::string> &huffmanCodes)
+{
+    if (root == nullptr)
+    {
+        return;
+    }
+
+    if (root->left == nullptr && root->right == nullptr)
+    {
+        // Este es un nodo hoja, por lo que contiene un carácter
+        huffmanCodes[root->ch] = currentCode;
+    }
+
+    // Recursivamente genera los códigos para el subárbol izquierdo y derecho
+    generateHuffmanCodes(root->left, currentCode + "0", huffmanCodes);
+    generateHuffmanCodes(root->right, currentCode + "1", huffmanCodes);
+}
+
+
 int BussinesLogic()
 {
+
+    const int numNodes = 3;
+    TreeNode nodes[numNodes] = { TreeNode('A', 0.3), TreeNode('B', 0.2), TreeNode('C', 0.1) };
+
+    TreeNode* root = buildHuffmanTree(nodes, numNodes);
+
+    char* huffmanCodes[256]; // Suponemos un máximo de 256 símbolos
+    for (int i = 0; i < 256; i++) {
+        huffmanCodes[i] = new char[32];
+        huffmanCodes[i][0] = '\0';
+    }
+
+    char root_code[32] = "";
+    generateHuffmanCodes(root, root_code, huffmanCodes);
+    
     const int maxHeapSize = 100;
     TreeNode *minHeap[maxHeapSize]; // Cambiar el tipo del montículo a puntero a puntero
 
@@ -180,4 +272,9 @@ int BussinesLogic()
     }
 
     return 0;
+}
+
+int main()
+{
+    BussinesLogic();
 }
